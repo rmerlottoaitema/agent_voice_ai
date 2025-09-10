@@ -1,0 +1,7 @@
+{
+  "uri": "sip:botuser@0.tcp.eu.ngrok.io:10645",
+  "username": "botuser",
+  "password": "password123",
+  "transport": "tcp"
+}
+

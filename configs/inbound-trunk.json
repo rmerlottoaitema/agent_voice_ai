@@ -1,0 +1,12 @@
+{
+  "trunk": {
+    "name": "My trunk",
+    "numbers": [
+      "+12082739053"
+    ],
+    "allowedNumbers": [
+       "+12082739053"
+     ]
+  }
+}
+

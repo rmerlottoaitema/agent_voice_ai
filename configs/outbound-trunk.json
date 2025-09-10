@@ -1,0 +1,10 @@
+{
+    "trunk": {
+      "name": "signalwire",
+      "address": "aitema-61fd310e2931.sip.signalwire.com",
+      "transport": 3,
+      "numbers": ["+15105550100"],
+      "auth_username": "livekit-aitema",
+      "auth_password": "aitema10"
+    }
+  }

@@ -1,0 +1,9 @@
+{
+  "sip_trunk_id": "ST_CdSotPbzJJhc",
+  "sip_call_to": "livekit-aitema",
+  "room_name": "my-sip-room",
+  "participant_identity": "sip-test",
+  "participant_name": "Test Caller",
+  "krisp_enabled": true,
+  "wait_until_answered": true
+}

@@ -1,5 +1,7 @@
+import json
 import logging
-
+import os
+from livekit import api
 from dotenv import load_dotenv
 from livekit.agents import (
     Agent,
@@ -32,8 +34,6 @@ class Assistant(Agent):
             You are curious, friendly, and have a sense of humor.""",
         )
 
-    # all functions annotated with @function_tool will be passed to the LLM when this
-    # agent is active
     @function_tool
     async def lookup_weather(self, context: RunContext, location: str):
         """Use this tool to look up current weather information in the given location.
@@ -45,46 +45,58 @@ class Assistant(Agent):
         """
 
         logger.info(f"Looking up weather for {location}")
-
         return "sunny with a temperature of 70 degrees."
 
 
-def prewarm(proc: JobProcess):
-    proc.userdata["vad"] = silero.VAD.load()
-
-
 async def entrypoint(ctx: JobContext):
-    # Logging setup
-    # Add any other context you want in all log entries here
+    # Load VAD directly in the entrypoint
+    vad = silero.VAD.load()
+    
+    # Initialize phone_number as None
+    phone_number = None
+    sip_participant_identity = None
+    
+    # Only try to parse metadata if it exists and is not empty
+    if ctx.job.metadata and ctx.job.metadata.strip():
+        try:
+            dial_info = json.loads(ctx.job.metadata)
+            phone_number = dial_info.get("phone_number")
+            sip_participant_identity = phone_number
+        except json.JSONDecodeError:
+            logger.warning("Invalid JSON metadata, ignoring")
+    
+    # Only attempt SIP call if phone_number is provided and valid
+    if phone_number:
+        try:
+            await ctx.api.sip.create_sip_participant(api.CreateSIPParticipantRequest(
+                room_name=ctx.room.name,
+                sip_trunk_id='ST_ogziJLEJJqcc',
+                sip_call_to=phone_number,
+                participant_identity=sip_participant_identity,
+                wait_until_answered=True,
+            ))
+            print("call picked up successfully")
+        except api.TwirpError as e:
+            print(f"error creating SIP participant: {e.message}, "
+                  f"SIP status: {e.metadata.get('sip_status_code')} "
+                  f"{e.metadata.get('sip_status')}")
+            ctx.shutdown()
+            return
+    
+    # Add context to log entries
     ctx.log_context_fields = {
         "room": ctx.room.name,
     }
 
-    # Set up a voice AI pipeline using OpenAI, Cartesia, Deepgram, and the LiveKit turn detector
+    # Set up voice AI pipeline
     session = AgentSession(
-        # A Large Language Model (LLM) is your agent's brain, processing user input and generating a response
-        # See all providers at https://docs.livekit.io/agents/integrations/llm/
         llm=openai.LLM(model="gpt-4o-mini"),
-        # Speech-to-text (STT) is your agent's ears, turning the user's speech into text that the LLM can understand
-        # See all providers at https://docs.livekit.io/agents/integrations/stt/
         stt=deepgram.STT(model="nova-3", language="multi"),
-        # Text-to-speech (TTS) is your agent's voice, turning the LLM's text into speech that the user can hear
-        # See all providers at https://docs.livekit.io/agents/integrations/tts/
         tts=cartesia.TTS(voice="6f84f4b8-58a2-430c-8c79-688dad597532"),
-        # VAD and turn detection are used to determine when the user is speaking and when the agent should respond
-        # See more at https://docs.livekit.io/agents/build/turns
         turn_detection=MultilingualModel(),
-        vad=ctx.proc.userdata["vad"],
+        vad=vad,
     )
 
-    # To use a realtime model instead of a voice pipeline, use the following session setup instead:
-    # session = AgentSession(
-    #     # See all providers at https://docs.livekit.io/agents/integrations/realtime/
-    #     llm=openai.realtime.RealtimeModel()
-    # )
-
-    # Metrics collection, to measure pipeline performance
-    # For more information, see https://docs.livekit.io/agents/build/metrics/
     usage_collector = metrics.UsageCollector()
 
     @session.on("metrics_collected")
@@ -98,29 +110,26 @@ async def entrypoint(ctx: JobContext):
 
     ctx.add_shutdown_callback(log_usage)
 
-    # # Add a virtual avatar to the session, if desired
-    # # For other providers, see https://docs.livekit.io/agents/integrations/avatar/
-    # avatar = hedra.AvatarSession(
-    #   avatar_id="...",  # See https://docs.livekit.io/agents/integrations/avatar/hedra
-    # )
-    # # Start the avatar and wait for it to join
-    # await avatar.start(session, room=ctx.room)
-
-    # Start the session, which initializes the voice pipeline and warms up the models
+    # Start the session
     await session.start(
         agent=Assistant(),
         room=ctx.room,
         room_input_options=RoomInputOptions(
-            # LiveKit Cloud enhanced noise cancellation
-            # - If self-hosting, omit this parameter
-            # - For telephony applications, use `BVCTelephony` for best results
             noise_cancellation=noise_cancellation.BVC(),
         ),
     )
+    
+    # Only greet if this is an inbound call (no phone number provided)
+    if phone_number is None:
+        await session.generate_reply(
+            instructions="Greet the user and offer your assistance."
+        )
 
     # Join the room and connect to the user
     await ctx.connect()
 
-
 if __name__ == "__main__":
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, prewarm_fnc=prewarm))
+    cli.run_app(WorkerOptions(
+        entrypoint_fnc=entrypoint,
+        agent_name="my-telephony-agent"
+    ))
