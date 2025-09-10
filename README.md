@@ -130,3 +130,19 @@ python src/agent.py start
 ```bash
 python src/agent.py download-files`
 ```
+
+## 8 - Setup ed avvio del server LiveKit Agent
+
+#### Installare i pacchetti Python necessari:
+```bash
+pip install flask
+pip install flask_cors
+```
+
+#### Esegui il server con:
+```bash
+python src/server.py
+```
+
+#### Server is running on:
+[http://0.0.0.0:3000](http://0.0.0.0:3000)
