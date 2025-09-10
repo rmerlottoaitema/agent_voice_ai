@@ -16,6 +16,11 @@ LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET")
 app = Flask(__name__)
 CORS(app)
 
+@app.get("/")
+def root():
+    return {"message": "LiveKit Agents server is running"}
+
+
 @app.route("/token", methods=["POST"])
 def token_endpoint():
     try:
