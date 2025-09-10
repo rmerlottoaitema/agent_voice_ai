@@ -16,6 +16,8 @@ sudo apt install python3
 brew update
 brew install python
 ```
+
+---
 ## 2 - Installare pip
 
 #### Su Linux:
@@ -30,7 +32,7 @@ python3 -m pip install --upgrade pip
 ```bash
 python3 -m pip install --upgrade pip
 ```
-
+---
 ## 3 - Creare un Virtual Environment
 
 #### Su Linux:
@@ -48,7 +50,7 @@ python3 -m venv venv
 ```bash
 source venv/bin/activate
 ```
-
+---
 ## 4 - Installare i pacchetti Python necessari
 
 ```bash
@@ -58,7 +60,7 @@ pip install "livekit-agents[deepgram,openai,cartesia,silero,turn-detector]~=1.2"
 pip install "livekit-plugins-noise-cancellation~=0.2"
 pip install dotenv
 ```
-
+---
 ## 5 - Variabili d'ambiente
 
 #### su file `.env.local`:
@@ -80,7 +82,7 @@ OPENAI_API_KEY=""
 | `DEEPGRAM_API_KEY`    | Opzionale    | Plugin Deepgram per trascrizione    |
 | `OPENAI_API_KEY`      | Opzionale    | Plugin OpenAI per AI / NLP          |
 
-
+---
 ## 6 - Comandi LiveKit Agents
 
 
@@ -93,7 +95,7 @@ OPENAI_API_KEY=""
 | `start`          | Avvia il worker in modalità produzione.                               |
 
 
-
+---
 ## 7 - Esempi pratici di comandi LiveKit Agent
 
 
@@ -130,7 +132,7 @@ python src/agent.py start
 ```bash
 python src/agent.py download-files`
 ```
-
+---
 ## 8 - Setup ed avvio del server LiveKit Agent
 
 #### Installare i pacchetti Python necessari:
@@ -146,3 +148,27 @@ python src/server.py
 
 #### Server is running on:
 [http://0.0.0.0:3000](http://0.0.0.0:3000)
+
+---
+## 9 - LiveKit Agents Setup con Docker
+
+#### Costruisci e avvia i container:
+```bash
+docker-compose up --build 
+```
+
+#### Sovrascrivere il comando al runtime:
+```bash
+command: ["connect", "--room", "sip-room"]
+```
+#### Oppure in CLI:
+```bash
+docker-compose run --rm livekit-agent connect --room sip-room
+```
+
+| Esempio CLI                                                | Risultato                                 |
+|------------------------------------------------------------|-------------------------------------------|
+| `docker-compose run livekit-agent start`                   | Avvia il worker in modalità produzione    |
+| `docker-compose run livekit-agent dev`                     | Avvia in modalità sviluppo                |
+| `docker-compose run livekit-agent console`                 | Avvia la console interattiva              |
+| `docker-compose run livekit-agent connect --room sip-room` | Connette a una stanza specifica           |
