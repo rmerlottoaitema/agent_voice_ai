@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.agent
+    command: ["connect", "--room", "sip-room"]
     container_name: livekit-agent
     ports:
       - "8081:8081"  
