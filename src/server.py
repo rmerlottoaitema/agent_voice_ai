@@ -6,6 +6,8 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from livekit.api.access_token import AccessToken
 import datetime
+import subprocess
+
 
 logging.basicConfig(level=logging.DEBUG)
 load_dotenv(".env.local")
@@ -71,6 +73,21 @@ def disconnect_agent():
     except Exception as e:
         logging.exception("Disconnect Error")
         return jsonify({"error": str(e)}), 500
+    
+
+@app.route("/start-agent", methods=["POST"])
+def start_agent():
+    try:
+        data = request.json or {}
+        room_name = data.get("roomName", "sip_room")
+
+        # Avvia il comando in background
+        subprocess.Popen(["python", "src/agent.py", "connect", "--room", room_name])
+
+        return jsonify({"status": "Agent avviato in background", "room": room_name})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3000, debug=True)
